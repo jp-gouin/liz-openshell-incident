@@ -1,0 +1,3 @@
+defaultNamespace: shop
+helm:
+  releaseName: checkout

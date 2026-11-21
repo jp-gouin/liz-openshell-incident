@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout
+  labels:
+    app: checkout
+    app.kubernetes.io/part-of: suse-shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: checkout
+  template:
+    metadata:
+      labels:
+        app: checkout
+        app.kubernetes.io/part-of: suse-shop
+    spec:
+      containers:
+        - name: checkout
+          image: registry.suse.com/bci/python:3.12
+          command: ["python3", "/app/app.py"]
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+            - name: CATALOG_CACHE_MB
+              value: "120"
+            - name: STARTUP_DELAY_SECONDS
+              value: "3"
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+      volumes:
+        - name: app
+          configMap:
+            name: checkout-app
